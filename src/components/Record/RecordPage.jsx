@@ -2,29 +2,45 @@ import { useState } from 'react'
 import PlayerSelector from './PlayerSelector'
 import GameScoreInput from './GameScoreInput'
 import MatchSummary from './MatchSummary'
+import { useLocalStorage } from '../../hooks/useLocalStorage'
 import { isValidGame, getGameWinner, getMatchWinner, isMatchComplete, formatTeam } from '../../utils/badminton'
 
 const EMPTY_SCORE = { home: '0', away: '0' }
+
+function toDatetimeLocal(date) {
+  const d = new Date(date)
+  // format as YYYY-MM-DDTHH:mm for <input type="datetime-local">
+  const pad = (n) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
 
 export default function RecordPage({ store, onSaved }) {
   const { players, playerMap, saveMatch } = store
 
   const [step, setStep] = useState(1) // 1: setup, 2: scores, 3: confirm
-  const [matchType, setMatchType] = useState('singles')
-  const [homeIds, setHomeIds] = useState([''])
-  const [awayIds, setAwayIds] = useState([''])
+
+  // Persisted: remember last selection across sessions
+  const [matchType, setMatchType] = useLocalStorage('badminton_last_matchType', 'singles')
+  const [homeIds, setHomeIds] = useLocalStorage('badminton_last_homeIds', [''])
+  const [awayIds, setAwayIds] = useLocalStorage('badminton_last_awayIds', [''])
+
   const [scores, setScores] = useState([{ ...EMPTY_SCORE }])
+  const [playedAt, setPlayedAt] = useState(() => toDatetimeLocal(new Date()))
 
   // --- derived ---
   const isDoubles = matchType === 'doubles'
   const requiredSlots = isDoubles ? 2 : 1
 
-  const homeReady = homeIds.slice(0, requiredSlots).every(Boolean)
-  const awayReady = awayIds.slice(0, requiredSlots).every(Boolean)
+  // Validate saved IDs still exist in the current player list
+  const validHomeIds = homeIds.map((id) => (playerMap[id] ? id : ''))
+  const validAwayIds = awayIds.map((id) => (playerMap[id] ? id : ''))
+
+  const homeReady = validHomeIds.slice(0, requiredSlots).every(Boolean)
+  const awayReady = validAwayIds.slice(0, requiredSlots).every(Boolean)
   const canStart = homeReady && awayReady
 
-  const homeLabel = formatTeam(homeIds.slice(0, requiredSlots).filter(Boolean), playerMap) || (isDoubles ? 'Home Team' : 'Home')
-  const awayLabel = formatTeam(awayIds.slice(0, requiredSlots).filter(Boolean), playerMap) || (isDoubles ? 'Away Team' : 'Away')
+  const homeLabel = formatTeam(validHomeIds.slice(0, requiredSlots).filter(Boolean), playerMap) || (isDoubles ? 'Home Team' : 'Home')
+  const awayLabel = formatTeam(validAwayIds.slice(0, requiredSlots).filter(Boolean), playerMap) || (isDoubles ? 'Away Team' : 'Away')
 
   const completedGames = scores
     .filter((s) => isValidGame(s.home, s.away))
@@ -64,11 +80,11 @@ export default function RecordPage({ store, onSaved }) {
   function handleSave() {
     const match = {
       id: crypto.randomUUID(),
-      playedAt: new Date().toISOString(),
+      playedAt: new Date(playedAt).toISOString(),
       matchType,
       players: {
-        home: homeIds.slice(0, requiredSlots).filter(Boolean),
-        away: awayIds.slice(0, requiredSlots).filter(Boolean),
+        home: validHomeIds.slice(0, requiredSlots).filter(Boolean),
+        away: validAwayIds.slice(0, requiredSlots).filter(Boolean),
       },
       games: completedGames,
       winner: matchWinner,
@@ -77,11 +93,13 @@ export default function RecordPage({ store, onSaved }) {
     onSaved()
   }
 
+  function handleGoToConfirm() {
+    setPlayedAt(toDatetimeLocal(new Date())) // reset to now each time entering confirm
+    setStep(3)
+  }
+
   function handleReset() {
     setStep(1)
-    setMatchType('singles')
-    setHomeIds([''])
-    setAwayIds([''])
     setScores([{ ...EMPTY_SCORE }])
   }
 
@@ -151,8 +169,8 @@ export default function RecordPage({ store, onSaved }) {
             <PlayerSelector
               players={players}
               matchType={matchType}
-              homeIds={homeIds}
-              awayIds={awayIds}
+              homeIds={validHomeIds}
+              awayIds={validAwayIds}
               onHomeChange={setHomeIds}
               onAwayChange={setAwayIds}
             />
@@ -195,7 +213,7 @@ export default function RecordPage({ store, onSaved }) {
 
           {completedGames.length >= 1 && (
             <button
-              onClick={() => setStep(3)}
+              onClick={handleGoToConfirm}
               className="w-full py-3 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-700 transition-colors"
             >
               Review & Save →
@@ -213,6 +231,20 @@ export default function RecordPage({ store, onSaved }) {
             games={completedGames}
             winnerSide={matchWinner}
           />
+
+          {/* Date & time picker */}
+          <div className="bg-white rounded-2xl border border-gray-100 p-4 space-y-1.5">
+            <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+              Date &amp; Time Played
+            </label>
+            <input
+              type="datetime-local"
+              value={playedAt}
+              onChange={(e) => setPlayedAt(e.target.value)}
+              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 text-sm"
+            />
+          </div>
+
           <div className="flex gap-2">
             <button
               onClick={() => setStep(2)}
