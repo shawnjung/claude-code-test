@@ -25,8 +25,12 @@ export function useAppStore() {
     setMatches((prev) => prev.filter((m) => m.id !== id))
   }
 
+  function updateMatch(updated) {
+    setMatches((prev) => prev.map((m) => (m.id === updated.id ? updated : m)))
+  }
+
   // Convenience: id → player map for lookups
   const playerMap = Object.fromEntries(players.map((p) => [p.id, p]))
 
-  return { players, addPlayer, deletePlayer, matches, saveMatch, deleteMatch, playerMap }
+  return { players, addPlayer, deletePlayer, matches, saveMatch, deleteMatch, updateMatch, playerMap }
 }

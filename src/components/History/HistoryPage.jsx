@@ -1,7 +1,15 @@
+import { useState } from 'react'
 import MatchCard from './MatchCard'
+import EditMatchModal from './EditMatchModal'
 
 export default function HistoryPage({ store }) {
-  const { matches, deleteMatch, playerMap } = store
+  const { matches, deleteMatch, updateMatch, playerMap, players } = store
+  const [editingMatch, setEditingMatch] = useState(null)
+
+  function handleSave(updated) {
+    updateMatch(updated)
+    setEditingMatch(null)
+  }
 
   return (
     <div className="space-y-6">
@@ -26,9 +34,20 @@ export default function HistoryPage({ store }) {
               match={match}
               playerMap={playerMap}
               onDelete={deleteMatch}
+              onEdit={setEditingMatch}
             />
           ))}
         </div>
+      )}
+
+      {editingMatch && (
+        <EditMatchModal
+          match={editingMatch}
+          players={players}
+          playerMap={playerMap}
+          onSave={handleSave}
+          onClose={() => setEditingMatch(null)}
+        />
       )}
     </div>
   )
