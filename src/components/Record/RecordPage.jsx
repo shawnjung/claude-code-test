@@ -2,6 +2,7 @@ import { useState } from 'react'
 import PlayerSelector from './PlayerSelector'
 import GameScoreInput from './GameScoreInput'
 import MatchSummary from './MatchSummary'
+import MatchCard from '../History/MatchCard'
 import { useLocalStorage } from '../../hooks/useLocalStorage'
 import { isValidGame, getGameWinner, getMatchWinner, isMatchComplete, formatTeam } from '../../utils/badminton'
 
@@ -103,6 +104,9 @@ export default function RecordPage({ store, onSaved }) {
     setScores([{ ...EMPTY_SCORE }])
   }
 
+  const { matches } = store
+  const recentMatches = matches.slice(0, 6)
+
   if (players.length < 2) {
     return (
       <div className="text-center py-16 text-gray-400">
@@ -114,9 +118,11 @@ export default function RecordPage({ store, onSaved }) {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="flex gap-8 items-start">
+      {/* ── Left: form ── */}
+      <div className="flex-1 min-w-0 space-y-4 max-w-lg">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-gray-900">Record Match</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Record Match</h1>
         {step > 1 && (
           <button onClick={handleReset} className="text-sm text-gray-400 hover:text-gray-600 transition-colors">
             Start over
@@ -261,6 +267,31 @@ export default function RecordPage({ store, onSaved }) {
           </div>
         </div>
       )}
+      </div>{/* end left column */}
+
+      {/* ── Right: recent matches (desktop only) ── */}
+      <aside className="hidden lg:block w-72 flex-shrink-0 space-y-4 sticky top-8">
+        <div>
+          <h2 className="text-sm font-semibold text-gray-900">Recent Matches</h2>
+          <p className="text-xs text-gray-400 mt-0.5">Last {recentMatches.length} recorded</p>
+        </div>
+        {recentMatches.length === 0 ? (
+          <div className="bg-white rounded-2xl border border-gray-100 p-6 text-center text-gray-400">
+            <p className="text-sm">No matches yet</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {recentMatches.map((match) => (
+              <MatchCard
+                key={match.id}
+                match={match}
+                playerMap={playerMap}
+                onDelete={store.deleteMatch}
+              />
+            ))}
+          </div>
+        )}
+      </aside>
     </div>
   )
 }

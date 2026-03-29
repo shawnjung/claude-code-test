@@ -7,11 +7,11 @@ export default function PlayersPage({ store }) {
   const [showModal, setShowModal] = useState(false)
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6 max-w-4xl">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-gray-900">Players</h1>
-          <p className="text-sm text-gray-500">{players.length} registered</p>
+          <h1 className="text-2xl font-bold text-gray-900">Players</h1>
+          <p className="text-sm text-gray-500 mt-0.5">{players.length} registered</p>
         </div>
         <button
           onClick={() => setShowModal(true)}
@@ -25,13 +25,13 @@ export default function PlayersPage({ store }) {
       </div>
 
       {players.length === 0 ? (
-        <div className="text-center py-16 text-gray-400">
-          <div className="text-5xl mb-3">🏸</div>
-          <p className="font-medium text-gray-600">No players yet</p>
+        <div className="text-center py-24 text-gray-400">
+          <div className="text-6xl mb-4">🏸</div>
+          <p className="font-medium text-gray-600 text-lg">No players yet</p>
           <p className="text-sm mt-1">Add players to start recording matches.</p>
         </div>
       ) : (
-        <div className="space-y-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-3">
           {players.map((player) => (
             <PlayerCard key={player.id} player={player} onDelete={deletePlayer} />
           ))}
