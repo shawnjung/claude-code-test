@@ -193,7 +193,7 @@ export default function RecordPage({ store, onSaved }) {
             </button>
           )}
 
-          {matchComplete && (
+          {completedGames.length >= 1 && (
             <button
               onClick={() => setStep(3)}
               className="w-full py-3 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-700 transition-colors"
